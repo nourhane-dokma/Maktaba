@@ -23,11 +23,16 @@ class BookRepository {
      * )
      */
     private val booksList = listOf(
-        Book(isbn = "", title = "Clean Code", nbPages = 0),
-        Book(isbn = "", title = "The Pragmatic Programmer", nbPages = 0),
-        Book(isbn = "", title = "Design Patterns", nbPages = 0),
-        Book(isbn = "", title = "Refactoring", nbPages = 0),
-        Book(isbn = "", title = "Head First Design Patterns", nbPages = 0)
+        Book(isbn = "978-0132350884", title = "Clean Code", nbPages = 464),
+        Book(isbn = "978-0201616224", title = "The Pragmatic Programmer", nbPages = 352),
+        Book(isbn = "978-0201633610", title = "Design Patterns", nbPages = 395),
+        Book(isbn = "978-0201485677", title = "Refactoring", nbPages = 448),
+        Book(isbn = "978-0596007126", title = "Head First Design Patterns", nbPages = 694),
+        Book(isbn = "978-1491950357", title = "Kotlin in Action", nbPages = 360),
+        Book(isbn = "978-1617293290", title = "Effective Java", nbPages = 416),
+        Book(isbn = "978-0134685991", title = "Java Concurrency in Practice", nbPages = 432),
+        Book(isbn = "978-0596009205", title = "Head First Java", nbPages = 720),
+        Book(isbn = "978-0321356680", title = "Test-Driven Development", nbPages = 240)
     )
 
     /**
