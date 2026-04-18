@@ -1,13 +1,22 @@
 package com.ElOuedUniv.maktaba.presentation.book.add
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.AsyncImage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -16,11 +25,11 @@ fun AddBookView(
     viewModel: AddBookViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    var showImageUrlInput by remember { mutableStateOf(false) }
+    var tempImageUrl by remember { mutableStateOf("") }
 
     LaunchedEffect(uiState.isSuccess) {
-        if (uiState.isSuccess) {
-            onBackClick()
-        }
+        if (uiState.isSuccess) onBackClick()
     }
 
     Scaffold(
@@ -36,35 +45,84 @@ fun AddBookView(
         }
     ) { padding ->
         Column(
-            modifier = Modifier.padding(padding).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier.padding(padding).fillMaxSize()
+                .verticalScroll(rememberScrollState()).padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            OutlinedTextField(
-                value = uiState.title,
-                onValueChange = { viewModel.onAction(AddBookUiAction.OnTitleChange(it)) },
-                label = { Text("Title") },
-                modifier = Modifier.fillMaxWidth()
-            )
-            OutlinedTextField(
-                value = uiState.isbn,
-                onValueChange = { viewModel.onAction(AddBookUiAction.OnIsbnChange(it)) },
-                label = { Text("ISBN") },
-                modifier = Modifier.fillMaxWidth()
-            )
-            OutlinedTextField(
-                value = uiState.nbPages,
-                onValueChange = { viewModel.onAction(AddBookUiAction.OnPagesChange(it)) },
-                label = { Text("Pages") },
-                modifier = Modifier.fillMaxWidth()
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            Button(
-                onClick = { viewModel.onAction(AddBookUiAction.OnAddClick) },
-                modifier = Modifier.fillMaxWidth()
+            // Cover Image area
+            Box(
+                modifier = Modifier.fillMaxWidth().height(200.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                contentAlignment = Alignment.Center
             ) {
-                Text("Confirm Add")
+                if (uiState.imageUrl != null) {
+                    AsyncImage(model = uiState.imageUrl, contentDescription = "Book cover",
+                        contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                } else {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("📷", style = MaterialTheme.typography.displayMedium)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("Add Cover Image", style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
+
+            if (showImageUrlInput) {
+                OutlinedTextField(
+                    value = tempImageUrl,
+                    onValueChange = { tempImageUrl = it },
+                    label = { Text("Image URL") },
+                    modifier = Modifier.fillMaxWidth(),
+                    trailingIcon = {
+                        TextButton(onClick = {
+                            viewModel.onAction(AddBookUiAction.OnImageUrlChange(tempImageUrl))
+                            showImageUrlInput = false
+                        }) { Text("Apply") }
+                    }
+                )
+            } else {
+                OutlinedButton(onClick = { showImageUrlInput = true },
+                    modifier = Modifier.fillMaxWidth()) {
+                    Text(if (uiState.imageUrl != null) "Change Cover Image" else "Add Cover URL")
+                }
+            }
+
+            HorizontalDivider()
+
+            OutlinedTextField(value = uiState.title,
+                onValueChange = { viewModel.onAction(AddBookUiAction.OnTitleChange(it)) },
+                label = { Text("Title *") }, modifier = Modifier.fillMaxWidth(),
+                isError = uiState.titleError != null,
+                supportingText = { uiState.titleError?.let {
+                    Text(it, color = MaterialTheme.colorScheme.error) } })
+
+            OutlinedTextField(value = uiState.isbn,
+                onValueChange = { viewModel.onAction(AddBookUiAction.OnIsbnChange(it)) },
+                label = { Text("ISBN (13 digits) *") }, modifier = Modifier.fillMaxWidth(),
+                isError = uiState.isbnError != null,
+                supportingText = { uiState.isbnError?.let {
+                    Text(it, color = MaterialTheme.colorScheme.error) } })
+
+            OutlinedTextField(value = uiState.nbPages,
+                onValueChange = { viewModel.onAction(AddBookUiAction.OnPagesChange(it)) },
+                label = { Text("Number of Pages *") }, modifier = Modifier.fillMaxWidth(),
+                isError = uiState.pagesError != null,
+                supportingText = { uiState.pagesError?.let {
+                    Text(it, color = MaterialTheme.colorScheme.error) } })
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedButton(onClick = onBackClick, modifier = Modifier.weight(1f)) {
+                    Text("Cancel")
+                }
+                Button(onClick = { viewModel.onAction(AddBookUiAction.OnAddClick) },
+                    modifier = Modifier.weight(1f), enabled = uiState.isFormValid) {
+                    Text("Confirm", fontWeight = FontWeight.Bold)
+                }
             }
         }
     }
