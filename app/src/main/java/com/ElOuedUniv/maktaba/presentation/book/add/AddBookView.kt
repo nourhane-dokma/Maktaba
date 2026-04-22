@@ -1,25 +1,26 @@
 package com.ElOuedUniv.maktaba.presentation.book.add
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AddPhotoAlternate
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.AsyncImage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -30,23 +31,27 @@ fun AddBookView(
     val uiState by viewModel.uiState.collectAsState()
     val scrollState = rememberScrollState()
 
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let { viewModel.onAction(AddBookUiAction.OnImageSelected(it)) }
+    }
+
     LaunchedEffect(uiState.isSuccess) {
-        if (uiState.isSuccess) {
-            onBackClick()
-        }
+        if (uiState.isSuccess) onBackClick()
     }
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { 
+                title = {
                     Text(
-                        "ADD BOOK", 
+                        "ADD BOOK",
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 2.sp
                         )
-                    ) 
+                    )
                 },
                 navigationIcon = {
                     TextButton(onClick = onBackClick) {
@@ -58,7 +63,10 @@ fun AddBookView(
                         onClick = { viewModel.onAction(AddBookUiAction.OnAddClick) },
                         enabled = uiState.isFormValid
                     ) {
-                        val color = if (uiState.isFormValid) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+                        val color = if (uiState.isFormValid)
+                            MaterialTheme.colorScheme.primary
+                        else
+                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
                         Text("Confirm", fontWeight = FontWeight.Bold, color = color)
                     }
                 },
@@ -78,7 +86,7 @@ fun AddBookView(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            // Add Cover Image Placeholder
+            // Image Picker
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -87,30 +95,40 @@ fun AddBookView(
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                 ),
-                onClick = { /* Simulation: Pick image */ }
+                onClick = { imagePickerLauncher.launch("image/*") }
             ) {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.AddPhotoAlternate,
+                if (uiState.imageUri != null) {
+                    AsyncImage(
+                        model = uiState.imageUri,
                         contentDescription = null,
-                        modifier = Modifier.size(48.dp),
-                        tint = MaterialTheme.colorScheme.primary
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(16.dp)),
+                        contentScale = ContentScale.Crop
                     )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        "ADD COVER IMAGE",
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
+                } else {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AddPhotoAlternate,
+                            contentDescription = null,
+                            modifier = Modifier.size(48.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            "ADD COVER IMAGE",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             }
 
-            // Input Fields
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 OutlinedTextField(
                     value = uiState.title,
@@ -122,7 +140,6 @@ fun AddBookView(
                     isError = uiState.titleError != null,
                     supportingText = { uiState.titleError?.let { Text(it) } }
                 )
-
                 OutlinedTextField(
                     value = uiState.isbn,
                     onValueChange = { viewModel.onAction(AddBookUiAction.OnIsbnChange(it)) },
@@ -133,7 +150,6 @@ fun AddBookView(
                     isError = uiState.isbnError != null,
                     supportingText = { uiState.isbnError?.let { Text(it) } }
                 )
-
                 OutlinedTextField(
                     value = uiState.nbPages,
                     onValueChange = { viewModel.onAction(AddBookUiAction.OnPagesChange(it)) },
@@ -148,7 +164,6 @@ fun AddBookView(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Primary Confirm Button
             Button(
                 onClick = { viewModel.onAction(AddBookUiAction.OnAddClick) },
                 enabled = uiState.isFormValid,
@@ -160,7 +175,6 @@ fun AddBookView(
                 Text("Confirm", style = MaterialTheme.typography.titleMedium)
             }
 
-            // Secondary Cancel Button
             TextButton(
                 onClick = onBackClick,
                 modifier = Modifier.fillMaxWidth()

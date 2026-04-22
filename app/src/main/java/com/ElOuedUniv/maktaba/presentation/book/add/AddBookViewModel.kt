@@ -1,19 +1,22 @@
 package com.ElOuedUniv.maktaba.presentation.book.add
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.ElOuedUniv.maktaba.data.model.Book
 import com.ElOuedUniv.maktaba.domain.usecase.AddBookUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class AddBookViewModel @Inject constructor(
     private val addBookUseCase: AddBookUseCase
 ) : ViewModel() {
-    
+
     private val _uiState = MutableStateFlow(AddBookUiState())
     val uiState = _uiState.asStateFlow()
 
@@ -30,6 +33,9 @@ class AddBookViewModel @Inject constructor(
             is AddBookUiAction.OnPagesChange -> {
                 _uiState.update { it.copy(nbPages = action.pages) }
                 validateInputs()
+            }
+            is AddBookUiAction.OnImageSelected -> {
+                _uiState.update { it.copy(imageUri = action.uri) }
             }
             AddBookUiAction.OnAddClick -> {
                 if (_uiState.value.isFormValid) {
@@ -49,7 +55,7 @@ class AddBookViewModel @Inject constructor(
         val pagesInt = nbPages.toIntOrNull()
         val pagesError = if (pagesInt == null || pagesInt <= 0) "Pages must be a positive number" else null
 
-        _uiState.update { 
+        _uiState.update {
             it.copy(
                 titleError = titleError,
                 isbnError = isbnError,
@@ -64,9 +70,12 @@ class AddBookViewModel @Inject constructor(
         val book = Book(
             isbn = currentState.isbn,
             title = currentState.title,
-            nbPages = currentState.nbPages.toIntOrNull() ?: 0
+            nbPages = currentState.nbPages.toIntOrNull() ?: 0,
+            imageUrl = currentState.imageUri?.toString()
         )
-        addBookUseCase(book)
-        _uiState.update { it.copy(isSuccess = true) }
+        viewModelScope.launch {
+            addBookUseCase(book)
+            _uiState.update { it.copy(isSuccess = true) }
+        }
     }
 }

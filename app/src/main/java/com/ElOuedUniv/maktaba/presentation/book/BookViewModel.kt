@@ -40,9 +40,6 @@ class BookViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Exercise 3 - Handle UI Actions
-     */
     fun onAction(action: BookUiAction) {
         when (action) {
             BookUiAction.RefreshBooks -> refreshBooks()
@@ -58,7 +55,9 @@ class BookViewModel @Inject constructor(
                     title = action.title,
                     nbPages = action.nbPages
                 )
-                addBookUseCase(newBook)
+                viewModelScope.launch {
+                    addBookUseCase(newBook)
+                }
                 _uiState.update { it.copy(isAddingBook = false) }
             }
         }
